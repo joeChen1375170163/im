@@ -1,0 +1,80 @@
+package com.zxwl.im.mq;
+
+import java.io.IOException;
+import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.Exchange;
+import org.springframework.amqp.rabbit.annotation.Queue;
+import org.springframework.amqp.rabbit.annotation.QueueBinding;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.Headers;
+import org.springframework.messaging.handler.annotation.Payload;
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
+
+import com.rabbitmq.client.Channel;
+import com.zxwl.common.utils.JsonUtil;
+import com.zxwl.im.entity.MessageInfo;
+import com.zxwl.im.service.IMessageHistoryService;
+import com.zxwl.im.websocket.IMManage;
+
+@Component
+public class RabbitCustomer
+{
+
+    private static final Logger logger = LoggerFactory.getLogger(RabbitCustomer.class);
+
+    @Autowired
+    private IMessageHistoryService historyService;
+
+    @RabbitListener(bindings = @QueueBinding(value = @Queue(value = "${imconf.customerQueue}", durable = "true"), exchange = @Exchange(name = "${imconf.exchange}", type = "topic"), key = "${imconf.customerKey}"))
+    public void onMessage(@Payload Message message, @Headers Map<String, Object> headers, Channel channel)
+    {
+
+        long delay = message.getMessageProperties().getDeliveryTag();
+        try
+        {
+            String msg = new String(message.getBody(), "UTF-8");
+
+            MessageInfo bean = JsonUtil.toBean(msg, MessageInfo.class);
+            if (null != bean)
+            {
+                if ("2".equals(bean.getContentType()) && null != IMManage.getAgentDropWait(bean.getReceiverId()))
+                {
+                    IMManage.getAgentDropWait(bean.getReceiverId()).getSession().sendMessage(new TextMessage(msg));
+                }
+                else if (null != IMManage.getCustomer(bean.getReceiverId()))
+                {
+                    if (IMManage.getCustomer(bean.getReceiverId()).getSession().isOpen())
+                    {
+                        IMManage.getCustomer(bean.getReceiverId()).getSession().sendMessage(new TextMessage(msg));
+                    }
+                }
+            }
+            // 确认当前消息已接收，为true时表示所有消费者已接收
+            // *********** 配置中是自动获取 这里再手动获取会两次ack，报error
+            // channel.basicAck(delay, false);
+            // 消息入库
+            historyService.saveMsg(bean);
+
+            logger.info("client_queue监听器接收到消息		message:" + msg);
+        }
+        catch (Exception e)
+        {
+            try
+            {
+                channel.basicAck(delay, false);
+            }
+            catch (IOException e1)
+            {
+                logger.error("向mq返回消息未接收出现异常", e);
+            }
+            logger.error("client_queue监听器接收到消息	 error", e);
+        }
+    }
+
+}

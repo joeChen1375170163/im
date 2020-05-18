@@ -1,0 +1,9 @@
+package com.zxwl.im.service;
+
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.im.entity.CommonMessage;
+
+public interface ICommonMessageService extends IBaseService<CommonMessage>
+{
+
+}

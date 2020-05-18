@@ -1,0 +1,11 @@
+package com.zxwl.im.dao;
+
+import com.zxwl.base.dao.BaseDao;
+import com.zxwl.im.entity.Operator;
+
+public interface OperatorDao extends BaseDao<Operator>
+{
+
+	public Operator findByWorkNo(String workNo);
+	
+}

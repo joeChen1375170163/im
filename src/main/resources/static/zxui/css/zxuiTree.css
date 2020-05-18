@@ -1,0 +1,166 @@
+/*tree样式文件*/
+/*类名说明*/
+/*
+**
+node-heard:一级根节点，一般不会出现第二次
+node-parent，father：底部有节点的非一级根节点
+node-parent:下面有子节点的根目录，一般显示图标为前面的加号减号，默认为加号，点击之后变为减号
+father：有子节点，决定本级显示为文件夹，点击切换文件夹打开或者关闭
+node-child：有子节点的非一级根节点的前面的文件夹图标，一般情况下为关闭状态，点击之后打开
+last-node：子节点的最后一个，显示为底部没有虚线
+node-line：显示为连接线，子节点前面的连接线
+children：与father相对应，控制下级目录显示为file图标而不是文件夹图标
+.last-node + ul:去掉最后一个节点下ul的虚线
+**
+*/
+/*清除基本样式*/
+ul,li{
+	list-style: none;
+	font-size: 12px;
+	font-weight: normal;
+	color: #444;
+	margin: 0px;
+	padding: 0px;
+	line-height: 20px;
+}
+ul{
+	padding-left:20px;
+}
+/*前面的竖线*/
+.treeContainer ul li ul,
+.treeBox ul li ul{
+	background: url(images/tree/line.png) 6px top repeat-y;	
+}
+.treeBox ul li .last-node + ul,
+.treeContainer ul li .last-node + ul{
+	background: none;
+}
+/*目录的字体，根目录*/
+.node-heard{
+	width:20px;
+	height:20px;
+	font-size: 12px;
+	font-weight:normal;
+	background: url(images/tree/heard.png) left center no-repeat;
+	padding-left: 20px;
+}
+/*有子节点，显示为文件夹和加号，下面有虚线，默认显示为加号，文件夹关闭*/
+.node-parent{
+	font-size: 12px;
+	font-weight:normal;
+	height:22px;
+	line-height: 22px;
+	overflow: hidden;
+}
+.node-parent .node-checkbox{
+	float: left;
+	display: inline-block;
+	width:16px;
+	height:16px;
+	cursor: pointer;
+	background: url(images/tree/checkbox.png) 0px 0px no-repeat;
+	border:none;
+	margin:3px 5px 0 0;
+}
+.node-parent .node-checkbox:hover{
+	background-position: left -20px;
+}
+/*有子节点则为文件夹和加号的图标,初始化文件夹关闭并且前面显示为加号*/
+.father span.node-child{
+	display:inline-block;
+	cursor:pointer;
+	float:left;
+	width:38px;
+	height:22px;
+	background: url(images/tree/treeview.png) left -22px no-repeat; 
+}
+.father a{
+	line-height: 22px;
+	color:#444;
+	float: left;
+}
+.father a:hover{
+	color:#222;
+}
+.father span.node-open{
+	background: url(images/tree/treeview.png) left -88px no-repeat; 
+}
+/*父节点最后一个，显示为下面没有虚线的图标*/
+.father.last-node  span.node-child{
+	background: url(images/tree/treeview.png) left -44px no-repeat; 
+}
+.father.last-node  span.node-open{
+	background: url(images/tree/treeview.png) left -112px no-repeat; 
+}
+/*最后一个有子节点的显示加号下面没有虚线*/
+.last-node-parent{
+	background-position: 0px -44px;
+}
+/*最后一个有子节点的加号点击后显示为没有虚线的减号*/
+.last-node-open{
+	background-position: 0px -110px;
+}
+
+/*自己是子节点，前面是虚线和有文件图标*/
+.node-line{
+	font-size: 12px;
+	font-weight:normal;
+	height:22px;
+	overflow: hidden;
+}
+/*子节点前面的input选择框*/
+.node-line .node-checkbox{
+	float: left;
+	display: inline-block;
+	width:16px;
+	height:16px;
+	background: url(images/tree/checkbox.png) 0px 0px no-repeat;
+	cursor: pointer;
+	border:none;
+	margin:3px 5px 0 0;
+}
+.node-line .node-checkbox:hover{
+	background-position: 0px -20px;
+}
+/*自己为子节点则添加虚线和文件图标*/
+.children span.node-child{
+	display:inline-block;
+	width:34px;
+	height:22px;
+	float:left;
+	background: url(images/tree/treeview.png) left -154px no-repeat; 
+}
+.children a{
+	float: left;
+	line-height: 22px;
+	color:#444;
+}
+.children a:hover{
+	color:#222;
+}
+
+/*子节点的最后一个显示没有下划线的文件图标*/
+ul li ul li .children.last-node span.node-child{
+	background: url(images/tree/treeview.png) left -176px no-repeat; 
+}
+/*有些子节点的选择框*/
+.father span.node-checkbox-active{
+	background-position: -20px 0px;
+}
+.father span.node-checkbox-active:hover{
+	background-position: -20px -20px;
+}
+/*无子节点的选择框*/
+.children span.node-checkbox-active{
+	background-position: -20px 0px;
+}
+.children span.node-checkbox-active:hover{
+	background-position: -20px -20px;
+}
+/*父节点全选*/
+.father span.node-checkbox-active-all{
+	background-position: 0px -80px;
+}
+.father span.node-checkbox-active-all:hover{
+	background-position: -20px -80px;
+}

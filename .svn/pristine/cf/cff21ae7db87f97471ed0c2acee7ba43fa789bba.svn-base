@@ -1,0 +1,22 @@
+package com.zxwl.im.action;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+
+import com.zxwl.base.action.BaseAction;
+import com.zxwl.base.dao.QueryParameter;
+import com.zxwl.base.dao.SpecificationType;
+import com.zxwl.im.entity.CommonMessage;
+
+@Controller
+@RequestMapping("/commonMessage")
+public class CommonMessageAction extends BaseAction<CommonMessage>
+{
+
+	@Override
+	public void fullQueryParameter(QueryParameter<CommonMessage> queryParameter)
+	{
+		queryParameter.addStringParameter("type", SpecificationType.equal);
+	}
+
+}

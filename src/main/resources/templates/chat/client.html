@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>在线聊天-客户端</title>
+    <link href="../static/css/chat.css" rel="stylesheet">
+    <link href="../static/zxui/css/zxui.css" rel="stylesheet">
+    <script src="../static/js/jquery.js" type="text/javascript"></script>
+    <script src="../static/js/common.js" type="text/javascript"></script>
+    <script src="../static/zxui/ui/layer.js" type="text/javascript"></script>
+    <script src="../static/js/client.js" type="text/javascript"></script>
+    <script src="../static/js/jquery.form.js" type="text/javascript"></script>
+    <script src="../static/js/uploadImg.js" type="text/javascript"></script>
+    <script src="../static/js/uploadFile.js" type="text/javascript"></script>
+    <script src="../static/layer/layer.js" type="text/javascript"></script>
+    <style type="text/css">
+        .online .online-center{
+            margin-left: 0;
+        }
+        /*1400分辨率以上*/
+        @media only screen and (min-width: 1400px) {
+            .online .online-right{
+                width:440px;
+            }
+            .online .online-center{
+                margin-right: 440px;
+            }
+        }
+        /*1280分辨率以上（大于1200px 小于1400）*/
+        @media screen and (min-width: 1000px) and (max-width: 1400px) {
+            .online .online-right{
+                width:360px;
+            }
+            .online .online-center{
+                margin-right: 360px;
+            }
+        }
+        /*1280分辨率以上（小于1200px 大于800）*/
+        @media screen and (min-width: 800px) and (max-width: 1000px) {
+            .online .online-right{
+                width:240px;
+            }
+            .online .online-center{
+                margin-right: 240px;
+            }
+            .online .online-right .tit ul li{
+                padding:0 6px;
+                margin-right:4px;
+            }
+        }
+        @media screen and (max-width: 800px){
+            .online{
+                width:801px;
+            }
+            .online .online-right{
+                width:240px;
+            }
+            .online .online-center{
+                margin-right: 240px;
+            }
+            .online .online-right .tit ul li{
+                padding:0 6px;
+                margin-right:4px;
+            }
+        }
+        
+    </style>
+</head>
+
+<script type="text/javascript">
+	
+	window.onbeforeunload = function() {
+		clientWebSocket.close();
+	}
+	
+	// 复制粘贴处理
+	function textFormat(e) {
+		e.preventDefault()
+		var text
+		var clp = (e.originalEvent || e).clipboardData
+		if (clp === undefined || clp === null) {
+			text = window.clipboardData.getData('text') || ''
+			if (text !== '') {
+				if (window.getSelection) {
+					var newNode = document.createElement('span')
+					newNode.innerHTML = text
+					window.getSelection().getRangeAt(0).insertNode(newNode)
+				} else {
+					// 		      document.selection.createRange().pasteHTML(text)
+				}
+			}
+// 			$("#outWord").append(text.replace(/\r\n/g, "<br>"));
+			insertAtCursor($("#outWord")[0], text.replace(/\r\n/g, "<br>"));
+		} else {
+			text = clp.getData('text/plain') || ''
+			if (text !== '') {
+// 				$("#outWord").append(text.replace(/\r\n/g, "<br>"));
+				insertAtCursor($("#outWord")[0], text.replace(/\r\n/g, "<br>"));
+			}
+		}
+	}
+
+	$(function() {
+		// 粘贴事件处理
+		document.getElementById('outWord').addEventListener('paste',
+				function(e) {
+					textFormat(e);
+				});
+		// 会车键发送消息，shift+enter换行
+		$("#outWord").bind("keydown",function(event){
+	        // 兼容IE和火狐和谷歌   
+		    var e = event || window.event ||arguments.callee.caller.arguments[0];
+		    if (e && e.keyCode==13 && !event.shiftKey) {
+		    	sendMsg();
+		    	event.returnValue = false;    
+				return false;
+		    }
+		});
+
+		$("#clearScreen").on("click", function() {
+			$(".messageBox").empty();
+		});
+
+		$("#facebtn").on("click", function(e) {
+			var faceStatus = $(".face").css("display");
+			if (faceStatus == "none") {
+				$(".face").css("display", "block");
+			} else {
+				$(".face").css("display", "none");
+			}
+			$(document).one("click", function() {
+				$(".face").css("display", "none");
+			});
+			e.stopPropagation();
+		});
+		$(".face").on("click", function(e) {
+			e.stopPropagation();
+		});
+	});
+
+	function setWait() {
+		getWaitNum();
+		$(".coverWait").show();
+		timeId = setInterval(function() {
+			getWaitNum();
+		}, 10000);
+	}
+
+	function putFace(str) {
+		$("#outWord").append(faceChange(str));
+		$(".face").hide();
+	}
+
+	function sendMsg() {
+		if (clientWebSocket == null) {
+			showWarningInfo("连接已断开，请重新连接...");
+			return;
+		}
+		if ($("#receiverId").val() == "") {
+			showWarningInfo("正在排队中请等待..");
+			return;
+		}
+		var msg = $("#outWord").html().replace(/\\+n/g, "<br/>").replace(new RegExp("&nbsp;", "g"), " ");
+		if (msg == "") {
+			$("#tips").show();
+			timeout = setTimeout(function() {
+				$("#tips").hide();
+				clearTimeout(timeout);
+			}, 2000);
+			return;
+		}
+		if (msg.length > 512) {
+			$("#tips2").show();
+			timeout = setTimeout(function() {
+				$("#tips2").hide();
+				clearTimeout(timeout);
+			}, 2000);
+			return;
+		}
+		var html = "<div class='message client'><div class='text'><i class='client-right'></i>"
+				+ faceChange(msg) + "</div></div>";
+		$(".messageBox").append(html);
+		//控制页面消息数量
+		var boxNum = $("#messageBox").find("*").length;
+		if(boxNum>50){
+			$("#messageBox").find("*").get(0).remove();
+		}
+		var behMsg = faceToText(msg);
+
+		$(".chatDiv").scrollTop($(".chatDiv")[0].scrollHeight);
+
+		var jsonMsg = "{\"senderName\":\""
+				+ $("#senderName").val()
+				+ "\",\"receiverName\":\""
+				+ $("#receiverName").val()
+				+ "\",\"message\":\""
+				+ behMsg.replace(new RegExp("\\\\", "g"), "\\\\")
+					.replace(new RegExp("\"", "g"), "\\\"")
+					.replace(/\s+/g, " ")
+				+ "\",\"contentType\":\"" + 1 + "\",\"msgType\":\"" + 2
+				+ "\",\"senderId\":\"" + $("#senderId").val()
+				+ "\",\"receiverId\":\"" + $("#receiverId").val() + "\"}";
+		clientWebSocket.send(jsonMsg);
+		$("#outWord").html("");
+	}
+	/**
+	发送文件
+	 */
+	function sendFile(data) {
+		var msg = data.fileId + "|" + data.fileName;
+		var html = "<div class='message client'><div class='text'><i class='client-right'></i>"
+				+ "<img style='float:left;margin-right:10px' id='"
+				+ data.fileId
+				+ "' name='"
+				+ data.fileName
+				+ "' src='../static/img/fileImg.png' onclick='loadFile(this)'>"
+				+ "<span style='float:left'>"
+				+ data.fileName
+				+ "</span>"
+				+ "</div></div>";
+		$(".messageBox").append(html);
+		$(".chatDiv").scrollTop($(".chatDiv")[0].scrollHeight);
+		var jsonMsg = "{\"senderName\":\"" + $("#senderName").val()
+				+ "\",\"receiverName\":\"" + $("#receiverName").val()
+				+ "\",\"message\":\"" + msg + "\",\"contentType\":\"" + 4
+				+ "\",\"msgType\":\"" + 2 + "\",\"senderId\":\""
+				+ $("#senderId").val() + "\",\"receiverId\":\""
+				+ $("#receiverId").val() + "\"}";
+		clientWebSocket.send(jsonMsg);
+	}
+
+	/**
+	 * 发送图片
+	 * @param data
+	 * @returns
+	 */
+	function sendImg(data) {
+
+		var imgId = data.imgId;
+		var emgUrl = data.url;
+
+		var html = "<div class='message client'><div class='text'><i class='client-right'></i>"
+				+ "<img style='max-width:200px;height:auto' id='"
+				+ imgId
+				+ "' src='"
+				+ emgUrl
+				+ "' onclick='fullAllBigImg(\""
+				+ imgId
+				+ "\",\"" + emgUrl + "\")'/>" + "</div></div>";
+		$(".messageBox").append(html);
+		$(".chatDiv").scrollTop($(".chatDiv")[0].scrollHeight);
+		var jsonMsg = "{\"senderName\":\"" + $("#senderName").val()
+				+ "\",\"receiverName\":\"" + $("#receiverName").val()
+				+ "\",\"message\":\"" + emgUrl + "\",\"contentType\":\"" + 5
+				+ "\",\"msgType\":\"" + 2 + "\",\"senderId\":\""
+				+ $("#senderId").val() + "\",\"receiverId\":\""
+				+ $("#receiverId").val() + "\"}";
+		clientWebSocket.send(jsonMsg);
+	}
+
+	function inputFace() {
+		var faceStatus = $(".face").css("display");
+		if (faceStatus == "none") {
+			$(".face").css("display", "block");
+		} else {
+			$(".face").css("display", "none");
+		}
+	}
+
+	function fileUp() {
+		if (clientWebSocket == null) {
+			showWarningInfo("连接已断开，请重新连接...");
+			return;
+		}
+		if ($("#receiverId").val() == "") {
+			showWarningInfo("正在排队中请等待..");
+			return;
+		}
+		$("#loadFile").click();
+	}
+
+	function importImg() {
+		if ($("#receiverId").val() == "") {
+			showWarningInfo("正在排队中请等待..");
+			return;
+		}
+		if (clientWebSocket == null) {
+			showWarningInfo("连接已断开，请重新连接...");
+			return;
+		}
+		$("#file").click();
+	}
+</script>
+
+<body style="overflow:hidden">
+<div class="online">
+
+    <!--右边（常用语、历史记录）-->
+    <div class="online-right">
+        <div class="tit">
+            <ul>
+                <li class="active">常见问题</li>
+                <li style="display: none">热点活动</li>
+                <li style="display: none">历史记录</li>
+            </ul>
+        </div>
+        <div class="online-right-content">
+            <div class="langDiv">
+                <ul id="commonWord">
+<!--                     <li>您好，货款什么时候可以到？</li> -->
+<!--                     <li>为什么我已经付款了，还没发货。</li> -->
+                </ul>
+            </div>            
+        </div>
+    </div>
+
+
+    <!--中间（聊天记录）-->
+    <div class="online-center">
+        <div class="chatDiv" style="top:0;">
+            <div id="messageBox" class="messageBox"  style="height:auto"></div>
+        </div>
+
+        <div class="sendDiv">
+            <div class="operation">
+                <a id="facebtn" title="表情" class="operationFace"></a>
+                <a onclick="fileUp();" title="文件" class="operationFile"></a>
+                <a onclick="importImg();" title="图片" class="operationImage"></a>
+            </div>
+            <div id="outWord" style="height:60%;width: 100%;overflow-y:auto;word-break:break-all;" hidefocus="true" tabindex="0" contenteditable="true"></div>
+			<form method="post" id="imgForm" name="imgForm" action="" enctype="multipart/form-data" style="display: none">
+                <input accept="image/*" name="file" id="file" type="file" title="发送图片" onchange="uploadImg(this,'client_')"/>
+            </form>
+            <form method="post" id="fileForm" name="fileForm" action="" enctype="multipart/form-data" style="display: none">
+                <input name="file" id="loadFile" type="file" title="发送文件" onchange="uploadFile('client_')"/>
+            </form>
+            
+<!--             <textarea placeholder="请输入..." id="outWord2"></textarea> -->
+            <div class="btnDiv">
+                <div class="tips" id="tips"><img src="../static/img/warning.png ">发送内容不能为空。</div>
+                <div class="tips" id="tips2"><img src="../static/img/warning.png ">发送内容不能超过512位字符。</div>
+                <input type="button" class="btn btn-send" value="发送" onclick="sendMsg();"/>
+                <input type="button" class="btn" id="clearScreen" value="清屏"/>
+            </div>
+            <div class="face" style="display:none;">
+	        	<img src="../static/face/aoman.gif" onclick="putFace('[傲慢]');">
+	        	<img src="../static/face/baiyan.gif" onclick="putFace('[白眼]');">
+	        	<img src="../static/face/bishi.gif" onclick="putFace('[鄙视]');">
+	        	<img src="../static/face/bizui.gif" onclick="putFace('[闭嘴]');">
+	        	<img src="../static/face/cahan.gif" onclick="putFace('[擦汗]');">
+	        	<img src="../static/face/caidao.gif" onclick="putFace('[菜刀]');">
+	        	<img src="../static/face/chajin.gif" onclick="putFace('[差劲]');">
+	        	<img src="../static/face/cheer.gif" onclick="putFace('[干杯]');">
+	        	<img src="../static/face/chong.gif" onclick="putFace('[虫]');">
+	        	<img src="../static/face/ciya.gif" onclick="putFace('[呲牙]');">
+	        	<img src="../static/face/da.gif" onclick="putFace('[敲打]');">
+	        	<img src="../static/face/dabian.gif" onclick="putFace('[便便]');">
+	        	<img src="../static/face/dabing.gif" onclick="putFace('[大兵]');">
+	        	<img src="../static/face/dajiao.gif" onclick="putFace('[怄火]');">
+	        	<img src="../static/face/daku.gif" onclick="putFace('[大哭]');">
+	        	<img src="../static/face/danu.gif" onclick="putFace('[大怒]');">
+	        	<img src="../static/face/dao.gif" onclick="putFace('[刀]');">
+	        	<img src="../static/face/deyi.gif" onclick="putFace('[得意]');">
+	        	<img src="../static/face/diaoxie.gif" onclick="putFace('[凋谢]');">
+	        	<img src="../static/face/er.gif" onclick="putFace('[饥饿]');">
+	        	<img src="../static/face/fadai.gif" onclick="putFace('[发呆]');">
+	        	<img src="../static/face/fadou.gif" onclick="putFace('[发抖]');">
+	        	<img src="../static/face/fan.gif" onclick="putFace('[饭]');">
+	        	<img src="../static/face/feiwen.gif" onclick="putFace('[飞吻]');">
+	        	<img src="../static/face/fendou.gif" onclick="putFace('[奋斗]');">
+	        	<img src="../static/face/gangga.gif" onclick="putFace('[尴尬]');">
+	        	<img src="../static/face/geili.gif" onclick="putFace('[给力]');">
+	        	<img src="../static/face/gouyin.gif" onclick="putFace('[勾引]');">
+	        	<img src="../static/face/guzhang.gif" onclick="putFace('[鼓掌]');">
+	        	<img src="../static/face/haha.gif" onclick="putFace('[哈哈]');">
+	        	<img src="../static/face/haixiu.gif" onclick="putFace('[害羞]');">
+	        	<img src="../static/face/haqian.gif" onclick="putFace('[哈欠]');">
+	        	<img src="../static/face/hua.gif" onclick="putFace('[花]');">
+	        	<img src="../static/face/huaixiao.gif" onclick="putFace('[坏笑]');">
+	        	<img src="../static/face/huishou.gif" onclick="putFace('[挥手]');">
+	        	<img src="../static/face/jidong.gif" onclick="putFace('[激动]');">
+	        	<img src="../static/face/jingkong.gif" onclick="putFace('[惊恐]');">
+	        	<img src="../static/face/jingya.gif" onclick="putFace('[惊讶]');">
+	        	<img src="../static/face/kafei.gif" onclick="putFace('[咖啡]');">
+	        	<img src="../static/face/keai.gif" onclick="putFace('[可爱]');">
+	        	<img src="../static/face/kelian.gif" onclick="putFace('[可怜]');">
+	        	<img src="../static/face/ketou.gif" onclick="putFace('[磕头]');">
+	        	<img src="../static/face/kiss.gif" onclick="putFace('[亲吻]');">
+	        	<img src="../static/face/ku.gif" onclick="putFace('[酷]');">
+	        	<img src="../static/face/kuaikule.gif" onclick="putFace('[快哭了]');">
+	        	<img src="../static/face/kulou.gif" onclick="putFace('[骷髅]');">
+	        	<img src="../static/face/kun.gif" onclick="putFace('[困]');">
+	        	<img src="../static/face/lanqiu.gif" onclick="putFace('[篮球]');">
+	        	<img src="../static/face/lenghan.gif" onclick="putFace('[冷汗]');">
+	        	<img src="../static/face/liuhan.gif" onclick="putFace('[流汗]');">
+	        	<img src="../static/face/liulei.gif" onclick="putFace('[流泪]');">
+	        	<img src="../static/face/liwu.gif" onclick="putFace('[礼物]');">
+	        	<img src="../static/face/love.gif" onclick="putFace('[爱心]');">
+	        	<img src="../static/face/ma.gif" onclick="putFace('[咒骂]');">
+	        	<img src="../static/face/nanguo.gif" onclick="putFace('[难过]');">
+	        	<img src="../static/face/no.gif" onclick="putFace('[no]');">
+	        	<img src="../static/face/ok.gif" onclick="putFace('[ok]');">
+	        	<img src="../static/face/peifu.gif" onclick="putFace('[佩服]');">
+	        	<img src="../static/face/pijiu.gif" onclick="putFace('[啤酒]');">
+	        	<img src="../static/face/pingpang.gif" onclick="putFace('[乒乓]');">
+	        	<img src="../static/face/pizui.gif" onclick="putFace('[撇嘴]');">
+	        	<img src="../static/face/qiang.gif" onclick="putFace('[强]');">
+	        	<img src="../static/face/qinqin.gif" onclick="putFace('[亲亲]');">
+	        	<img src="../static/face/qioudale.gif" onclick="putFace('[糗大了]');">
+	        	<img src="../static/face/qiu.gif" onclick="putFace('[足球]');">
+	        	<img src="../static/face/quantou.gif" onclick="putFace('[拳头]');">
+	        	<img src="../static/face/ruo.gif" onclick="putFace('[弱]');">
+	        	<img src="../static/face/se.gif" onclick="putFace('[色]');">
+	        	<img src="../static/face/shandian.gif" onclick="putFace('[闪电]');">
+	        	<img src="../static/face/shengli.gif" onclick="putFace('[胜利]');">
+	        	<img src="../static/face/shuai.gif" onclick="putFace('[衰]');">
+	        	<img src="../static/face/shuijiao.gif" onclick="putFace('[睡觉]');">
+	        	<img src="../static/face/taiyang.gif" onclick="putFace('[太阳]');">
+	        	<img src="../static/face/tiao.gif" onclick="putFace('[跳跳]');">
+	        	<img src="../static/face/tiaopi.gif" onclick="putFace('[调皮]');">
+	        	<img src="../static/face/tiaosheng.gif" onclick="putFace('[跳绳]');">
+	        	<img src="../static/face/tiaowu.gif" onclick="putFace('[跳舞]');">
+	        	<img src="../static/face/touxiao.gif" onclick="putFace('[偷笑]');">
+	        	<img src="../static/face/tu.gif" onclick="putFace('[吐]');">
+	        	<img src="../static/face/wabi.gif" onclick="putFace('[挖鼻]');">
+	        	<img src="../static/face/weiqu.gif" onclick="putFace('[委屈]');">
+	        	<img src="../static/face/weixiao.gif" onclick="putFace('[微笑]');">
+	        	<img src="../static/face/wen.gif" onclick="putFace('[疑问]');">
+	        	<img src="../static/face/woshou.gif" onclick="putFace('[握手]');">
+	        	<img src="../static/face/xia.gif" onclick="putFace('[吓]');">
+	        	<img src="../static/face/xianwen.gif" onclick="putFace('[献吻]');">
+	        	<img src="../static/face/xigua.gif" onclick="putFace('[西瓜]');">
+	        	<img src="../static/face/xinsui.gif" onclick="putFace('[心碎]');">
+	        	<img src="../static/face/xu.gif" onclick="putFace('[嘘]');">
+	        	<img src="../static/face/yinxian.gif" onclick="putFace('[阴险]');">
+	        	<img src="../static/face/yongbao.gif" onclick="putFace('[拥抱]');">
+	        	<img src="../static/face/youhengheng.gif" onclick="putFace('[右哼哼]');">
+	        	<img src="../static/face/youtaiji.gif" onclick="putFace('[右太极]');">
+	        	<img src="../static/face/yueliang.gif" onclick="putFace('[月亮]');">
+	        	<img src="../static/face/yun.gif" onclick="putFace('[晕]');">
+	        	<img src="../static/face/zaijian.gif" onclick="putFace('[再见]');">
+	        	<img src="../static/face/zhadan.gif" onclick="putFace('[炸弹]');">
+	        	<img src="../static/face/zhemo.gif" onclick="putFace('[折磨]');">
+	        	<img src="../static/face/zhuakuang.gif" onclick="putFace('[抓狂]');">
+	        	<img src="../static/face/zhuanquan.gif" onclick="putFace('[转圈]');">
+	        	<img src="../static/face/zhutou.gif" onclick="putFace('[猪头]');">
+	        	<img src="../static/face/zuohengheng.gif" onclick="putFace('[左哼哼]');">
+	        	<img src="../static/face/zuotaiji.gif" onclick="putFace('[左太极]');">
+	        	<img src="../static/face/zuqiu.gif" onclick="putFace('[足球]');">
+	        </div>
+
+			<!-- 客户信息 -->
+            <div id="userInfo">
+            	<input type="hidden" id="senderId"/>
+            	<input type="hidden" id="senderName"/>
+            	<input type="hidden" id="receiverId"/>
+            	<input type="hidden" id="receiverName"/>
+            </div>
+        </div>
+    </div>
+
+</div>
+<!-- 查看图片 -->
+<div class="zoomInContainer" id="zoomInContainer" style="display: none;">
+	<div class="zoomInContent">
+		<div class="zoomInClose" id="zoomInClose"></div>
+		<div id="showHistoryFlag" class="historyImg" style="display:block;">
+		</div>
+	</div>
+</div>
+<iframe id="download" style="display: none"></iframe>
+
+<!-- 当前排队等待提示动图 -->
+<div class="coverWait">
+	<div class="wait">
+		<img src="../static/img/wait.gif">
+		<p></p>
+	</div>
+</div>
+<script type="text/javascript">
+    /*广告、热点活动、历史记录*/
+    $(document).ready(function(){
+        $(".online-right .tit li").click(function(){
+            $(".online-right .tit li").eq($(this).index()).addClass("active").siblings().removeClass("active");
+            $(".langDiv").hide().eq($(this).index()).show();
+        });
+    });
+</script>
+</body>
+</html>

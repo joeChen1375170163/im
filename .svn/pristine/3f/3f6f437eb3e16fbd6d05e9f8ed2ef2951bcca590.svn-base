@@ -1,0 +1,80 @@
+package com.zxwl.common.utils;
+
+import java.io.IOException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+
+public class JsonUtil
+{
+	private static final ObjectMapper objectMapper = new ObjectMapper();
+    
+    private final static Logger logger = LoggerFactory.getLogger(JsonUtil.class);
+    
+    /**
+     * 将对象转换成JSON字符串
+     * @param object    需要转换的实体
+     * @throws Exception
+     */
+    public static String toString(final Object object)
+    {
+        try
+        {
+            Assert.notNull(object, "将对象转换成JSON字符串，object不能为Null");
+            
+            return objectMapper.writeValueAsString(object);
+        }
+        catch (Exception e)
+        {
+            logger.error("将对象转换成JSON字符串，发生异常！object:"+object, e);
+        }
+        return null;
+    }
+    
+    /**
+     * 将JSON字符串转换为{@link JsonNode}
+     * @param jsonStr   JSON字符串
+     * @throws Exception
+     */
+    public static JsonNode toJsonNode(String jsonStr)
+    {
+        try
+        {
+            Assert.notNull(jsonStr, "将JSON字符串转换为JsonNode，jsonStr不能为Null");
+            
+            return objectMapper.readTree(jsonStr);
+        }
+        catch (IOException e)
+        {
+            logger.error("将JSON字符串转换为JsonNode，发生异常！jsonStr:"+jsonStr, e);
+        }
+        return null;
+    }
+    
+    /**
+     * 将JSON字符串转换为对应实体
+     * @param jsonStr   JSON字符串
+     * @param clazz     POJO/MAP/LIST....
+     * @throws Exception
+     */
+    public static <T> T toBean(String jsonStr, Class<T> clazz)
+    {
+        try
+        {
+            Assert.notNull(jsonStr, "将JSON字符串转换为对应实体，jsonStr不能为Null");
+            Assert.notNull(clazz, "将JSON字符串转换为对应实体，clazz不能为Null");
+            
+            return objectMapper.readValue(jsonStr, clazz);
+        }
+        catch (Exception e)
+        {
+            logger.error("将JSON字符串转换为对应实体，发生异常！jsonStr:"+jsonStr+", clazz:"+clazz, e);
+        }
+        return null;
+    }
+}

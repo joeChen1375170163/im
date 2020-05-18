@@ -1,0 +1,11 @@
+package com.zxwl.im.dao;
+
+import com.zxwl.base.dao.BaseDao;
+import com.zxwl.im.entity.Satisfaction;
+
+public interface SatisfactionDao extends BaseDao<Satisfaction>
+{
+
+    public Satisfaction findByWorkNo(String workNo);
+    
+}

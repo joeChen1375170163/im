@@ -1,0 +1,71 @@
+package com.zxwl.common;
+
+import java.io.Serializable;
+
+import org.springframework.util.Assert;
+
+public class ResponseResult implements Serializable
+{
+    private static final long serialVersionUID = -1877046123822945789L;
+    
+    /** 状态说明 */
+    private String result;
+    
+    /** 消息 */
+    private Object message;
+
+    public ResponseResult(String result, Object message)
+    {
+        this.result = result;
+        this.message = message;
+    }
+    
+    /**
+     * 生成success返回对象
+     * @param message   消息
+     * @return
+     */
+    public static ResponseResult success(Object message)
+    {
+        Assert.notNull(message, "生成success返回对象， data 不能为空");
+        
+        return new ResponseResult("success", message);
+    }
+    
+    /**
+     * 生成error返回对象
+     * @param message   消息
+     * @return
+     */
+    public static ResponseResult error(Object message)
+    {
+        Assert.notNull(message, "生成error返回对象， message 不能为空");
+        
+        return new ResponseResult("error", message);
+    }
+    
+    /**
+     * 生成自定义返回对象
+     * @param status    状态码
+     * @param result    状态说明
+     * @param message   消息
+     * @return
+     */
+    public static ResponseResult other(String result, Object message)
+    {
+        Assert.notNull(result, "生成自定义返回对象， result 不能为空");
+        Assert.notNull(message, "生成自定义返回对象， message 不能为空");
+        
+        return new ResponseResult(result, message);
+    }
+
+	public String getResult()
+	{
+		return result;
+	}
+
+	public Object getMessage()
+	{
+		return message;
+	}
+}

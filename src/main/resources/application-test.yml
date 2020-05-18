@@ -1,0 +1,37 @@
+server:
+  port: 10135
+  servlet:
+    context-path: /im
+    
+spring:
+  #数据源
+  datasource:
+    username: un_hcvc
+    password: un_hcvc
+    url: jdbc:mysql://192.168.16.230:3306/im?characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull
+    
+    #连接池配置
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      auto-commit: true             #自动提交
+      #connection-timeout: 30000    #连接超时时间
+      #idle-timeout: 600000         #空闲超时时间
+      max-lifetime: 1800000         #最长生命周期
+      #minimum-idle: 5              #最小空闲连接（不推荐设置）
+      maximum-pool-size: 20         #最大连接数（包括空闲和正在使用的连接）
+      pool-name: DatebookHikariCP
+      connection-test-query: SELECT 1
+      
+  #RabbitMQ
+  rabbitmq:
+    host: 192.168.20.140
+    port: 5672
+    username: admin
+    password: admin
+    virtual-host: /
+    publisher-confirms: true
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: NONE # NONE 自动确认；AUTO：根据情况确认；MANUAL：手动确认

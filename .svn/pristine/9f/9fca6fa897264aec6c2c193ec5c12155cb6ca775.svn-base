@@ -1,0 +1,101 @@
+@charset "utf-8";
+/* CSS Document */
+img{
+	border:none;
+	display:inline-block;
+	}
+a{
+	font-size:12px;
+	color:#444;
+	text-decoration:none;
+	}
+/*初始化*/
+.dtree {
+	margin-left: 10px;
+}
+
+/*一级主菜单*/
+.clip{
+	display:inline-block;
+	overflow:hidden;
+	}
+.clip .dTreeNode{
+	overflow:hidden;
+	height:22px;
+	font-size:12px;
+	font-weight:bold;
+	}
+.clip .dTreeNode a,.clip .dTreeNode a img,.clip .dTreeNode img{
+	display:block;
+	float:left;
+	height:22px;
+	font-size:12px;
+	}
+.clip .dTreeNode a img{
+	display:inline-block;
+	}
+.clip .dTreeNode .node input[type="checkbox"]{
+	width:13px;
+	height:13px;
+	border:none;
+	vertical-align:middle;
+	}
+.clip .dTreeNode .node{
+	line-height:22px;
+	margin-left:5px;
+	}
+/*二级主菜单*/
+.clip .clip .dTreeNode{
+	overflow:hidden;
+	height:22px;
+	}
+.clip .clip .dTreeNode img,.clip .clip .dTreeNode a{
+	float:left;
+	display:inline-block;
+	height:22px;
+	font-size:12px;
+	}
+.clip .clip .dTreeNode a img{
+	display:inline-block;
+	}
+.clip .clip .dTreeNode .node input[type="checkbox"]{
+	width:13px;
+	height:13px;
+	border:none;
+	vertical-align:middle;
+	}
+/*三级菜单*/
+.clip .clip .clip .dTreeNode{
+	height:22px;
+	font-size:12px;
+	font-weight:normal;
+	}
+.clip .clip .clip .dTreeNode input[type="checkbox"]{
+	border:none;
+}
+.clip .clip .clip .dTreeNode img,.clip .clip .dTreeNode a{
+	display:inline-block;
+	height:22px;
+	font-size:12px;
+	}
+.clip .clip .clip .dTreeNode a img{
+	display:inline-block;
+	}
+.clip .clip .clip .dTreeNode .node input[type="checkbox"]{
+	width:13px;
+	height:13px;
+	border:none;
+	margin-top:2px;
+	}
+.dtree .clip .clip .dTreeNode input input[type="checkbox"]{
+	width:13px;
+	height:13px;
+	border:none;
+	margin-top:2px;
+	vertical-align:middle;
+	}
+
+
+
+
+

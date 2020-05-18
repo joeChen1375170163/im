@@ -1,0 +1,68 @@
+package com.zxwl.base.dao;
+
+public class Parameter
+{
+	private Class<?> type;
+	private Object value;
+	private String name;
+	private String dirction;
+
+	private SpecificationType specificationType;
+
+	public Parameter(String name, Class<?> clazz, SpecificationType specificationType)
+	{
+		this.type = clazz;
+		this.name = name;
+		this.specificationType = specificationType;
+	}
+
+	public Class<?> findType()
+	{
+		return this.type;
+	}
+
+	public void setDirction(String dirction)
+	{
+		this.dirction = dirction;
+	}
+
+	public String getDirction()
+	{
+		return dirction;
+	}
+
+	Object findValue()
+	{
+		return value;
+	}
+
+	public Object getValue()
+	{
+		return value;
+	}
+
+	public void setValue(Object value)
+	{
+		this.value = value;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public void setName(String name)
+	{
+		this.name = name;
+	}
+
+	public SpecificationType getSpecificationType()
+	{
+		return specificationType;
+	}
+
+	public void setSpecificationType(SpecificationType specificationType)
+	{
+		this.specificationType = specificationType;
+	}
+}

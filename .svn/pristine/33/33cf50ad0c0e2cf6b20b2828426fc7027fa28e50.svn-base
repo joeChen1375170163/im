@@ -1,0 +1,11 @@
+package com.zxwl.im.dao;
+
+import com.zxwl.base.dao.BaseDao;
+import com.zxwl.im.entity.Customer;
+
+public interface CustomerDao extends BaseDao<Customer> 
+{
+
+	public Customer findByPhoneNo(String phoneNo);
+	
+}

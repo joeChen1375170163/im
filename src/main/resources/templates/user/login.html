@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户(客户)登录</title>
+    <link href="../static/zxui/css/zxui.css" rel="stylesheet">
+    <script src="../static/js/jquery.js" type="text/javascript"></script>
+    <script src="../static/js/common.js" type="text/javascript"></script>
+    <script src="../static/js/jquery.form.js" type="text/javascript"></script>
+    <script src="../static/zxui/ui/layer.js" type="text/javascript"></script>
+</head>
+
+<script>
+	$(function(){
+		getVerify($("#imgVerify"));
+	});
+
+	//客户端登录 
+	function login(){
+		var phoneNo = $("#phoneNo").val();
+		var phoneNoReg = /^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\d{8}$/;
+		if(!phoneNoReg.test(phoneNo)){
+			alert("手机号格式错误，请重新输入！");
+			return;
+		}
+		var verificationCode = $("#verificationCode").val();
+		var verify = $("#verify").val();
+		$.post("../customer/entrance/login",{"phoneNo":phoneNo,"verificationCode":verificationCode,"verify":verify},function(data){
+			console.log(data);
+			if(data.result == "success"){
+				var index = data.message.indexOf("?");
+				var param = data.message.substring(index);
+				var id = getUrlParam(param,'id');
+				var name = getUrlParam(param,'name');
+				onCustomerLogin(id,name,"customer");
+			}else{
+				alert(data.message);
+			}
+		});
+	}
+	
+	//客户重复登陆验证  
+	function onCustomerLogin(phoneNo,name)
+	{
+		$.post("../customer/entrance/verification",{"id":phoneNo,"flag":"customer"},function(data){
+			if(data.result=="success"){
+				window.location.href="../chat/client.html?phoneNo="+phoneNo+"&name="+encodeURIComponent(encodeURIComponent(name));
+			} else {
+				layer.confirm("用户已在线，是否强制登录？", {
+					  btn: ["是","否"], closeBtn: 0
+					}, function(index){
+						layer.close(index);
+						window.location.href="../chat/client.html?phoneNo="+phoneNo+"&name="+encodeURIComponent(encodeURIComponent(name));
+					}, function(index){
+						layer.close(index);
+					});
+			}
+		});
+	}
+	
+	function getUrlParam(url,name) {
+        var reg = new RegExp("(^|&)" + name + "=([^&]*)(&|$)"); 
+        var r = url.substr(1).match(reg);  //匹配目标参数
+        if (r != null) 
+        	return unescape(r[2]); 
+        return null; //返回参数值
+    }
+	
+	//获取验证码
+	function getVerify(obj){
+	    obj.src = "../customer/entrance/getcode?"+Math.random();
+	}
+	
+	//发送手机验证码
+	function sendVerifyMail(){
+		var phoneNo = $("#phoneNo").val();
+		var phoneNoReg = /^(13[0-9]|14[579]|15[0-3,5-9]|16[6]|17[0135678]|18[0-9]|19[89])\d{8}$/;
+		if(!phoneNoReg.test(phoneNo)){
+			alert("手机号格式错误，请重新输入！");
+			return;
+		}
+		$.get("../customer/entrance/sendMail",{"phoneNo":phoneNo,"type":"login"},function(data){
+			alert(data.message);
+		});
+	}
+
+	//坐席端 
+	function workLogin(){
+		var workNo = $("#workNo").val();
+		var pwd = $("#workPassword").val();
+		$.post("../operator/entrance/login",{"workNo":workNo,"password":pwd},function(data){
+			if(data.result=="success"){
+				onOperatorLogin(workNo);
+			}else{
+				alert(data.message);
+			}
+		})
+	}
+	
+	//坐席端重复登陆验证 
+	function onOperatorLogin(workNo)
+	{
+		$.post("../customer/entrance/verification",{"id":workNo,"flag":"agent"},function(data){
+			if(data.result=="success"){
+				window.location.href="../chat/chat.html?workNo="+workNo;
+			} else {
+				layer.confirm("坐席已在线，是否强制登录？", {
+					btn: ["是","否"], closeBtn: 0
+				}, function(index){
+					layer.close(index);
+					window.location.href="../chat/chat.html?workNo="+agentId;
+				}, function(index){
+					layer.close(index);
+				});
+			}
+		});
+	}
+	
+</script>
+
+<body>
+<!-- 	客户登录 -->
+	<br/><br/>
+	手机号&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;：<input id="phoneNo" name="phoneNo" type="text" /><br/><br/><br/>
+	短信验证码：<input id="verificationCode" name="verificationCode" type="text" /><br/>
+	验证码&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;：<input id="verify" type="text" name="verify" />
+	<a href="javascript:void(0);" rel="external nofollow" title="点击更换验证码">
+	   <img id="imgVerify" src="../customer/entrance/getcode" alt="更换验证码" width="100px;" onclick="getVerify(this);">
+    </a><br/><br/>
+    <button onclick="sendVerifyMail();">发送验证码</button><br/>
+	<button class="button large green" style="position: relative;left:60px;" onclick="login();">登录
+	</button>
+	
+	<br/><br/>
+	
+<!-- 	坐席登录 -->
+	工号：<input id="workNo" name="workNo" type="text" />
+	密码：<input id="workPassword" name="workPassword" type="password" />
+	<button style="position: relative;left:60px;" onclick="workLogin();">登录</button>
+</body>
+</html>

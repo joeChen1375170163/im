@@ -1,0 +1,9 @@
+package com.zxwl.im.dao;
+
+import com.zxwl.im.entity.SystemConfig;
+
+public interface SystemConfigDaoEx
+{
+	SystemConfig findByIdEx(Integer id);
+
+}

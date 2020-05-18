@@ -1,0 +1,51 @@
+package com.zxwl.common.config;
+
+import java.io.File;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import com.zxwl.common.intercept.LoginInterceptor;
+import com.zxwl.common.utils.FileUtil;
+
+@Configuration
+public class MvcConfig implements WebMvcConfigurer
+{
+	/**
+	 * 不经过Controller，实现页面跳转
+	 */
+	@Override
+	public void addViewControllers(ViewControllerRegistry registry)
+	{
+		registry.addViewController("/").setViewName("index");
+	}
+
+	/**
+	 * 添加拦截器
+	 */
+	@Override
+	public void addInterceptors(InterceptorRegistry registry)
+	{
+		registry.addInterceptor(new LoginInterceptor())
+				.addPathPatterns("/**")
+				.excludePathPatterns("/static/**");
+	}
+
+	/**
+	 * 定义资源文件
+	 */
+	@Override
+	public void addResourceHandlers(ResourceHandlerRegistry registry)
+	{
+		String staticPath  = File.separatorChar + "static" + File.separatorChar;
+		registry.addResourceHandler("/static/**", "/**")
+				.addResourceLocations("classpath:/static/","classpath:/templates/", 
+								"file:" + FileUtil.getJarRootPath() + staticPath);
+
+		WebMvcConfigurer.super.addResourceHandlers(registry);
+	}
+
+}

@@ -1,0 +1,368 @@
+package com.zxwl.base.dao;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
+
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.util.CollectionUtils;
+
+import com.zxwl.common.utils.StringUtil;
+
+/**
+ * 处理查询参数
+ * 
+ * @author wsw
+ */
+public class QueryParameter<T> implements Specification<T>
+{
+    private static final long serialVersionUID = 4796587730664276138L;
+
+    private Map<String, Parameter> params = new HashMap<String, Parameter>();
+
+    private List<String> ands = new ArrayList<>();
+    private List<String> ors = new ArrayList<>();
+    private List<Order> orders = new ArrayList<>();
+
+    public void setParams(Map<String, Parameter> params)
+    {
+        this.params = params;
+    }
+
+    public Map<String, Parameter> findParams()
+    {
+        return params;
+    }
+
+    /**
+     * 方便转JSon使用
+     * 
+     * @return
+     */
+    public Map<String, String> getParams()
+    {
+        Map<String, String> map = new HashMap<String, String>();
+        Set<String> names = this.params.keySet();
+        for (String name : names)
+        {
+            Parameter parameter = params.get(name);
+            if (parameter != null && parameter.getValue() != null)
+            {
+                map.put(name, parameter.getValue().toString());
+            }
+        }
+        return map;
+    }
+
+    public void addParameter(String parameterName, Object value, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, value.getClass(), type);
+        parameter.setValue(value);
+        addParameter(parameter);
+    }
+
+    public void addStringParameter(String parameterName, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, String.class, type);
+        addParameter(parameter);
+    }
+
+    public void addIntegerParameter(String parameterName, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, Integer.class, type);
+        addParameter(parameter);
+    }
+
+    public void addDateParameter(String parameterName, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, Date.class, type);
+        addParameter(parameter);
+    }
+
+    public void addDoubleParameter(String parameterName, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, Double.class, type);
+        addParameter(parameter);
+    }
+
+    public void addFloatParameter(String parameterName, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, Float.class, type);
+        addParameter(parameter);
+    }
+
+    public void removeParameter(String parameterName)
+    {
+        params.remove(parameterName);
+    }
+
+    public void addParameter(Parameter parameter)
+    {
+        if (null == parameter)
+        {
+            return;
+        }
+        String paraName = parameter.getName();
+        if (StringUtil.isEmpty(paraName))
+        {
+            return;
+        }
+
+        parameter.setDirction("IN");
+        paraName = paraName.trim();
+        params.put(paraName, parameter);
+    }
+
+    public void addOutParameter(String parameterName, Object value, SpecificationType type)
+    {
+        Parameter parameter = new Parameter(parameterName, value.getClass(), type);
+        parameter.setValue(value);
+        addOutParameter(parameter);
+    }
+
+    public void addOutParameter(Parameter parameter)
+    {
+        if (null == parameter)
+        {
+            return;
+        }
+        String paraName = parameter.getName();
+        if (StringUtil.isEmpty(paraName))
+        {
+            return;
+        }
+        parameter.setDirction("OUT");
+        paraName = paraName.trim();
+        params.put(paraName, parameter);
+    }
+
+    public Parameter findParameter(String paraName)
+    {
+        return params.get(paraName);
+    }
+
+    public Object findParameterValue(String paraName)
+    {
+        Parameter para = findParameter(paraName);
+        if (null != para)
+        {
+            return para.getValue();
+        }
+        return null;
+    }
+
+    public Set<String> findParameterNames()
+    {
+        return params.keySet();
+    }
+
+    public Integer size()
+    {
+        return params.size();
+    }
+
+    public boolean isEmpty()
+    {
+        if (0 == size())
+        {
+            return true;
+        }
+        return false;
+    }
+
+    public Boolean containParameter(String paraName)
+    {
+        if (params.containsKey(paraName))
+        {
+            Object value = findParameterValue(paraName);
+            if (value != null && !value.toString().equals(""))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 添加and条件
+     * 
+     * @param names
+     *            条件名称，需与parameterName对应
+     */
+    public QueryParameter<T> and(String... names)
+    {
+        this.ands.addAll(Arrays.asList(names));
+        return this;
+    }
+
+    /**
+     * 添加or条件
+     * 
+     * @param names
+     *            条件名称，需与parameterName对应
+     */
+    public QueryParameter<T> or(String... names)
+    {
+        this.ors.addAll(Arrays.asList(names));
+        return this;
+    }
+
+    /**
+     * 添加排序条件
+     */
+    public QueryParameter<T> order(Order... orders)
+    {
+        this.orders.addAll(Arrays.asList(orders));
+        return this;
+    }
+
+    /**
+     * 将params中所有key都加入and中
+     * 
+     * @see(BaseService) BaseService 中默认调用
+     * @return
+     */
+    public QueryParameter<T> andDefault()
+    {
+        return and(this.findParameterNames().stream().toArray(String[]::new));
+    }
+
+    public Predicate queryPredicate(Root<T> root, CriteriaBuilder cb, Parameter parameter)
+    {
+        SpecificationType type = parameter.getSpecificationType();
+        String attribute = parameter.getName();
+        Object value = parameter.getValue();
+
+        if (type == SpecificationType.like)
+        {
+            return cb.like(root.get(attribute), "%" + value + "%");
+        }
+        else if (type == SpecificationType.leftLike)
+        {
+            return cb.like(root.get(attribute), "%" + value);
+        }
+        else if (type == SpecificationType.rigthLike && value instanceof String)
+        {
+            return cb.like(root.get(attribute), value + "%");
+        }
+        else if (type == SpecificationType.equal)
+        {
+            return cb.equal(root.get(attribute), value);
+        }
+        else if (type == SpecificationType.notEqual)
+        {
+            return cb.notEqual(root.get(attribute), value);
+        }
+        else if (type == SpecificationType.lessThan && value instanceof Number)
+        {
+            return cb.lt(root.get(attribute), (Number) value);
+        }
+        else if (type == SpecificationType.lessThanAndEqual && value instanceof Number)
+        {
+            return cb.le(root.get(attribute), (Number) value);
+        }
+        else if (type == SpecificationType.moreThan && value instanceof Number)
+        {
+            return cb.gt(root.get(attribute), (Number) value);
+        }
+        else if (type == SpecificationType.moreThanAndEqual && value instanceof Number)
+        {
+            return cb.ge(root.get(attribute), (Number) value);
+        }
+        else if (type == SpecificationType.isNull)
+        {
+            return cb.isNull(root.get(attribute));
+        }
+        else if (type == SpecificationType.isNotNull)
+        {
+            return cb.isNotNull(root.get(attribute));
+        }
+        else if (type == SpecificationType.in && value instanceof Collection)
+        {
+            return cb.in(root.get(attribute)).in(value);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Predicate toPredicate(Root<T> root, CriteriaQuery<?> query, CriteriaBuilder cb)
+    {
+        Predicate predicate = null;
+        Predicate[] andArr = ofPredicates(ands, root, cb);
+        if (andArr.length > 0)
+        {
+            predicate = cb.and(andArr);
+        }
+        Predicate[] orArr = ofPredicates(ors, root, cb);
+        if (orArr.length > 0)
+        {
+            predicate = cb.and(cb.or(orArr));
+        }
+        query.orderBy(toOrders(root, cb));
+        return predicate;
+    }
+
+    public Predicate[] ofPredicates(List<String> list, Root<T> root, CriteriaBuilder cb)
+    {
+        List<Predicate> preArr = new ArrayList<>();
+        
+        for (int i = 0; i < list.size(); i++)
+        {
+            Parameter parameter = findParameter(list.get(i));
+            if (null == parameter.findValue() && parameter.getSpecificationType() != SpecificationType.isNull 
+                    && parameter.getSpecificationType() != SpecificationType.isNotNull)
+            {
+                continue;
+            }
+            preArr.add(queryPredicate(root, cb, parameter));
+        }
+        return preArr.stream().toArray(Predicate[]::new);
+    }
+
+    /**
+     * 转换为Order
+     *
+     * @param root
+     *            Root
+     * @return Order
+     */
+    private List<javax.persistence.criteria.Order> toOrders(Root<T> root, CriteriaBuilder cb)
+    {
+        List<javax.persistence.criteria.Order> orderList = new ArrayList<javax.persistence.criteria.Order>();
+        if (root == null || CollectionUtils.isEmpty(orders))
+        {
+            return orderList;
+        }
+        for (Order order : orders)
+        {
+            if (order == null)
+            {
+                continue;
+            }
+            String property = order.getProperty();
+            Order.Direction direction = order.getDirection();
+            switch (direction)
+            {
+                case asc:
+                    orderList.add(cb.asc(root.get(property)));
+                    break;
+                case desc:
+                    orderList.add(cb.desc(root.get(property)));
+                    break;
+            }
+        }
+        return orderList;
+    }
+
+}

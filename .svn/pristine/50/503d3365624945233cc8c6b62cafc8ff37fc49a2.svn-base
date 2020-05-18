@@ -1,0 +1,62 @@
+package com.zxwl.im.service;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.zxwl.base.service.BaseService;
+import com.zxwl.common.utils.StringUtil;
+import com.zxwl.im.dao.MessageHistoryDao;
+import com.zxwl.im.entity.MessageHistory;
+import com.zxwl.im.entity.MessageInfo;
+
+@Service
+public class MessageHistoryService extends BaseService<MessageHistory> implements IMessageHistoryService
+{
+	private static final Logger logger = LoggerFactory.getLogger(MessageHistoryService.class);
+
+	@Autowired
+	private MessageHistoryDao messageHistoryDao;
+	
+
+	public void saveMsg(MessageInfo bean){
+		try
+		{
+			// 提示语不入库
+			if ("2".equals(bean.getContentType()) || "3".equals(bean.getContentType()))
+			{
+				return;
+			}
+			SimpleDateFormat sdf = new SimpleDateFormat(StringUtil.YYYY_MM_DD_HH_MM_SS);
+			MessageHistory mh = new MessageHistory();
+			mh.setSenderId(bean.getSenderId());
+			mh.setSenderName(bean.getSenderName());
+			mh.setReceiverId(bean.getReceiverId());
+			mh.setReceiverName(bean.getReceiverName());
+			mh.setCreateTime(sdf.format(new Date()));
+			mh.setMsg(bean.getMessage());
+			mh.setType(Integer.valueOf(bean.getContentType()));
+			mh.setMsgType(bean.getMsgType());
+			if("1".equals(bean.getMsgType())) {
+				mh.setClientId(bean.getReceiverId());
+			}else if("2".equals(bean.getMsgType())) {
+				mh.setClientId(bean.getSenderId());
+			}
+			messageHistoryDao.save(mh);
+		}
+		catch (Exception e)
+		{
+			logger.error("消息存入数据库异常：",e);
+		}
+	}
+	
+	@Override
+	public String queryLastAgentId(String customerId)
+	{
+		return messageHistoryDao.queryLastAgentId(customerId);
+	}
+}

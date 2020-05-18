@@ -1,0 +1,11 @@
+package com.zxwl.im.service;
+
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.im.entity.Satisfaction;
+
+public interface ISatisfactionService extends IBaseService<Satisfaction>
+{
+
+    public Satisfaction findByWorkNo(String workNo);
+    
+}

@@ -1,0 +1,16 @@
+package com.zxwl.im.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.zxwl.base.service.BaseService;
+import com.zxwl.im.dao.CommonMessageDao;
+import com.zxwl.im.entity.CommonMessage;
+
+@Service
+public class CommonMessageService extends BaseService<CommonMessage> implements ICommonMessageService
+{
+
+	@Autowired
+	CommonMessageDao dao;
+}

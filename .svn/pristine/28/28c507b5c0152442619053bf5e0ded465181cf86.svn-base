@@ -1,0 +1,11 @@
+package com.zxwl.im.service;
+
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.im.entity.Customer;
+
+public interface IUserService extends IBaseService<Customer>
+{
+
+	public Customer findByPhoneNo(String phoneNo);
+	
+}

@@ -1,0 +1,34 @@
+package com.zxwl.base.dao;
+
+import javax.persistence.LockModeType;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.NoRepositoryBean;
+
+import com.zxwl.im.dao.SystemConfigDao;
+import com.zxwl.im.dao.SystemConfigDaoImpl;
+
+/**
+ * <p>自定义Base Repository
+ * <p>参考文档 :  {@link https://docs.spring.io/spring-data/jpa/docs/2.0.13.RELEASE/reference/html/#repositories.customize-base-repository}
+ * <p>若需要自己编写DAO层方法，{@link SystemConfigDaoEx}为接口层，{@link SystemConfigDaoImpl}为实现层，在原接口DAO({@link SystemConfigDao})中继承新的接口层即可
+ * <p>注意：实现层需与原接口DAO类名默认规则，例如：
+ * <p>原接口DAO：SystemConfigDao，则实现层类名为：SystemConfigDaoImpl
+ */
+@NoRepositoryBean
+public interface BaseDao<T> extends JpaRepository<T, Integer>, JpaSpecificationExecutor<T>
+{
+	/**
+	 * <p> 重写{@link CrudRepository#save(Object)}方法，添加锁模式
+	 */
+	@Override
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	<S extends T> S save(S entity);
+	
+	T findByIdEx(Integer id);
+	
+	
+}

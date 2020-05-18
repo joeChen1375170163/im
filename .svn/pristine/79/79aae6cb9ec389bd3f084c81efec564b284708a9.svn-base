@@ -1,0 +1,11 @@
+package com.zxwl.im.service;
+
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.im.entity.Operator;
+
+public interface IOperatorService extends IBaseService<Operator>
+{
+
+	public Operator findByWorkNo(String workNo);
+	
+}

@@ -1,0 +1,17 @@
+package com.zxwl.im.dao;
+
+import java.util.List;
+
+import com.zxwl.base.dao.BaseDao;
+import com.zxwl.im.entity.SystemConfig;
+
+public interface SystemConfigDao extends BaseDao<SystemConfig>, SystemConfigDaoEx
+{
+
+	/**
+	 * 通过名称查询
+	 * @param  itemName 配置项名称
+	 * @return
+	 */
+	List<SystemConfig> findByItemName(String itemName);
+}

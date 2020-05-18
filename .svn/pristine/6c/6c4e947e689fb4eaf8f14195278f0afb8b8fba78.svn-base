@@ -1,0 +1,150 @@
+package com.zxwl.base.action;
+
+import java.net.URLDecoder;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.zxwl.base.dao.NewDataPage;
+import com.zxwl.base.dao.Parameter;
+import com.zxwl.base.dao.QueryParameter;
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.common.ResponseResult;
+import com.zxwl.common.utils.StringUtil;
+
+public abstract class BaseAction<T>
+{
+	@Autowired
+	private IBaseService<T> baseService;
+
+	@Autowired
+	private HttpServletRequest request;
+
+	private static final Logger logger = LoggerFactory.getLogger(BaseAction.class);
+
+	@ResponseBody
+	@GetMapping("/query/{id}")
+	public T query(@PathVariable Integer id)
+	{
+		return baseService.query(id);
+	}
+
+	@ResponseBody
+	@PutMapping("/delete/{id}")
+	public ResponseResult delete(@PathVariable Integer id)
+	{
+		try
+		{
+			baseService.delete(id);
+			return this.sendSuccessResult("删除成功!");
+		}
+		catch (Exception e)
+		{
+			logger.error("删除发生异常， id:" + id, e);
+			return this.sendErrorResult("删除失败!");
+		}
+	}
+
+	@ResponseBody
+	@PostMapping("/update")
+	public ResponseResult update(T entity)
+	{
+		try
+		{
+			baseService.update(entity);
+			return this.sendSuccessResult("更新成功!");
+		}
+		catch (Exception e)
+		{
+//			logger.error("删除发生异常， entity:" + JsonUtil.toString(entity), e);
+			return this.sendErrorResult("更新失败!");
+		}
+	}
+
+	@ResponseBody
+	@PostMapping("/save")
+	public ResponseResult save(T entity)
+	{
+		try
+		{
+			baseService.save(entity);
+			return this.sendSuccessResult("保存成功!");
+		}
+		catch (Exception e)
+		{
+//			logger.error("保存发生异常， entity:" + JsonUtil.toString(entity), e);
+			return this.sendSuccessResult("保存失败!");
+		}
+	}
+
+	@ResponseBody
+	@GetMapping("/queryList")
+	public NewDataPage<T> queryList(Integer pageNum, Integer pageSize)
+	{
+		NewDataPage<T> dataPage = new NewDataPage<T>(pageNum, pageSize);
+		QueryParameter<T> queryParameter = new QueryParameter<T>();
+		fullQueryParameter(queryParameter);
+		queryParameter = getParameter(queryParameter);
+		dataPage.setQueryParameter(queryParameter);
+		baseService.queryForPage(dataPage);
+		return dataPage;
+	}
+
+	public QueryParameter<T> getParameter(QueryParameter<T> queryParameter)
+	{
+		if (null != queryParameter && queryParameter.size() > 0)
+		{
+			for (String name : queryParameter.findParameterNames())
+			{
+				Parameter parameter = queryParameter.findParameter(name);
+				if (parameter != null)
+				{
+					try
+					{
+						String value = this.getParameterValue(name);
+						if (StringUtil.isValue(value))
+						{
+							value = URLDecoder.decode((value), "utf-8");
+							parameter.setValue(value);
+						}
+					}
+					catch (Exception e)
+					{
+						logger.error("从HttpRequest获取 " + name + " 值，发生异常", e);
+					}
+				}
+			}
+		}
+		return queryParameter;
+	}
+
+	public String getParameterValue(String paraName)
+	{
+		return request.getParameter(paraName);
+	}
+
+	public ResponseResult sendSuccessResult(Object message)
+	{
+		return ResponseResult.success(message);
+	}
+
+	public ResponseResult sendErrorResult(Object message)
+	{
+		return ResponseResult.error(message);
+	}
+
+	public ResponseResult sendOtherResult(String result, Object message)
+	{
+		return ResponseResult.other(result, message);
+	}
+
+	public abstract void fullQueryParameter(QueryParameter<T> queryParameter);
+}

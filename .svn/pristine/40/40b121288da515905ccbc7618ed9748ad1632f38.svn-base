@@ -1,0 +1,9 @@
+package com.zxwl.im.dao;
+
+import com.zxwl.base.dao.BaseDao;
+import com.zxwl.im.entity.CommonMessage;
+
+public interface CommonMessageDao extends BaseDao<CommonMessage>
+{
+
+}

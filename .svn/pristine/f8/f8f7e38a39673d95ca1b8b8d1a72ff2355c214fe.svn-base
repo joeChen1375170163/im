@@ -1,0 +1,18 @@
+package com.zxwl.im.service;
+
+import java.util.List;
+
+import com.zxwl.base.service.IBaseService;
+import com.zxwl.im.entity.SystemConfig;
+
+public interface ISystemConfigService extends IBaseService<SystemConfig>
+{
+
+	/**
+	 * 通过名称查询
+	 * @param  itemName 配置项名称
+	 * @return
+	 */
+	List<SystemConfig> findByItemName(String itemName);
+
+}
